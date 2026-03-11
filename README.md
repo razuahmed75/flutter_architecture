@@ -11,7 +11,7 @@
     -   `get` (State Management)
     -   `dio` (Networking)
     -   `objectbox` (Local Database)
-    -   `auto_route` (Routing)
+    -   `go_router` (Routing)
     -   `get_it` (Service Locator)
 -   **🛠️ Smart Boilerplate**: Generates ready-to-use utility files like `ObjectBoxHelper` and `AppEnv` configurations.
 -   **🖱️ Context Menu Support**: Right-click on any folder in the Explorer to trigger the generator.
@@ -32,3 +32,11 @@ lib/
 ├── res/            # Resources: Constants, Themes, Routes, Enums
 ├── utils/          # Helper classes, Validators, Loggers
 └── view/           # UI Layer: Screens and reusable Widgets
+
+## 🚀 Installation & Usage
+
+### 1. Global Activation
+To use the tool from anywhere on your machine, activate it globally via the Dart SDK:
+
+1. dart pub global activate flutter_pro_architect
+2. flutter_pro_architect
