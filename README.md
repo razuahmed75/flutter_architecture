@@ -32,3 +32,11 @@ lib/
 ├── res/            # Resources: Constants, Themes, Routes, Enums
 ├── utils/          # Helper classes, Validators, Loggers
 └── view/           # UI Layer: Screens and reusable Widgets
+
+## 🚀 Installation & Usage
+
+### 1. Global Activation
+To use the tool from anywhere on your machine, activate it globally via the Dart SDK:
+
+1. dart pub global activate flutter_pro_architect
+2. flutter_pro_architect
