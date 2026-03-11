@@ -43,36 +43,24 @@ void main(List<String> arguments) async {
     print('❌ Failed to create service_locator.dart: $e');
   }
 
-  // 5. Add Dependencies with Comments
-  print('📦 Organizing and adding essential packages...');
+  // 5. Add Packages (Automatically fetching latest)
+  print('\n📦 Adding essential packages...');
 
-  final pubspecFile = File('pubspec.yaml');
-  String content = await pubspecFile.readAsString();
+  // Extract only the package names (skipping the # comments)
+  final packageNames =
+      AppConfig.dependencies.keys.where((key) => !key.startsWith('#')).toList();
 
-  // Generate the dependency string from our Map
-  StringBuffer depBuffer =
-      StringBuffer('\ndependencies:\n  flutter:\n    sdk: flutter\n');
+  if (packageNames.isNotEmpty) {
+    final process = await Process.run(
+        'flutter', ['pub', 'add', ...packageNames],
+        runInShell: true);
 
-  AppConfig.dependencies.forEach((name, version) {
-    if (name.startsWith('#')) {
-      depBuffer.writeln('  $name'); // It's a comment
+    if (process.exitCode == 0) {
+      print('✅ Successfully added all packages.');
     } else {
-      depBuffer.writeln('  $name: $version'); // It's a package
+      print('❌ Error adding packages: ${process.stderr}');
     }
-  });
-
-  // Simple logic to replace the dependencies section
-  // Note: For a production tool, you'd use a YAML editor package,
-  // but for a generator, appending/replacing works well.
-  if (content.contains('dependencies:')) {
-    final parts = content.split('dependencies:');
-    final newContent = '${parts[0]}${depBuffer.toString()}';
-    await pubspecFile.writeAsString(newContent);
   }
-
-  // 6. Run Pub Get
-  print('⏳ Running flutter pub get...');
-  await Process.run('flutter', ['pub', 'get'], runInShell: true);
 
   print('\n✨ Architecture Ready! Happy Coding.');
   print(

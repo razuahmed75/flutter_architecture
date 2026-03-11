@@ -6,10 +6,9 @@ homepage: https://github.com/razuahmed75/flutter_architecture
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
-dependencies:
-  args: ^2.4.0
-  path: ^1.8.0
 
-# THIS SECTION IS CRITICAL
-executables:
-  flutter_pro_architect: my_architect  # maps 'flutter_pro_architect' to bin/main.dart
+
+dependencies:
+  flutter:
+    sdk: flutter
+  args: ^2.7.0
