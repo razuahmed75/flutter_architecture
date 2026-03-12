@@ -32,8 +32,12 @@ lib/
 ├── res/            # Resources: Constants, Themes, Routes, Enums
 ├── utils/          # Helper classes, Validators, Loggers
 └── view/           # UI Layer: Screens and reusable Widgets
+```
+<img width="343" height="945" alt="project_structure" src="https://github.com/user-attachments/assets/df4d12c8-1b5c-4aba-ab5c-fc6568c35774" />
+<img width="415" height="946" alt="packages" src="https://github.com/user-attachments/assets/ebe02ccb-90c5-4be2-8214-32b68f399262" />
 
 ## 🚀 Installation & Usage
+
 
 ### 1. Global Activation
 To use the tool from anywhere on your machine, activate it globally via the Dart SDK:
