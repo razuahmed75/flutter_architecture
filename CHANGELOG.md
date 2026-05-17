@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-05-17
+### Updated
+- Updated readme.md file
+
+## [2.2.0] - 2026-05-17
+### Added
+- Auto package installation in `setup` command — all essential packages are now added automatically via `flutter pub add` when running `flutter_pro_architect:setup`
+- Category-based comment grouping (`#icon`, `#navigation`, `#toast`, `#env`, `#network`, `#ui`, `#app_config`, `#media`, `#core`) injected into `pubspec.yaml` for organized dependency management
+- Smart skip logic — existing packages are detected and skipped to avoid conflicts
+- Enhanced setup summary with separate sections for directories/files and packages
+
+### Packages Added Automatically
+- **#icon**: `hugeicons`
+- **#navigation**: `go_router`, `path_provider`
+- **#toast**: `cherry_toast`, `fluttertoast`
+- **#env**: `flutter_dotenv`
+- **#network**: `dio`, `talker_dio_logger`, `retrofit`, `dio_cache_interceptor`, `synchronized`
+- **#ui**: `flutter_screenutil`
+- **#app_config**: `rename_app`, `change_app_package_name`, `flutter_launcher_icons`
+- **#media**: `cached_network_image`, `photo_view`, `image_picker`, `file_picker`, `carousel_slider`, `url_launcher`
+- **#core**: `dartz`, `flutter_bloc`, `equatable`, `get_it`
+
 ## [2.1.3] - 2026-05-17
 ### Updated
 - Updated issues tracker, homepage and repository links

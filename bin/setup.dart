@@ -61,9 +61,167 @@ Future<void> main(List<String> args) async {
     await _createFile(entry.key, entry.value, created, skipped);
   }
 
-  _logSuccess('Setup completed.');
-  _printSummary(created: created, skipped: skipped, android: scaffoldAndroid, ios: scaffoldIos);
+  // ── Add required packages ──────────────────────────────────────────
+  _logInfo('\nAdding required packages...');
+
+  final addedPackages = <String>[];
+  final skippedPackages = <String>[];
+
+  final pubspecContent = File('pubspec.yaml').readAsStringSync();
+
+  for (final group in _packageGroups) {
+    for (final pkg in group.packages) {
+      if (_packageExists(pubspecContent, pkg)) {
+        skippedPackages.add(pkg);
+        _logSkip('  ⊘ $pkg (already exists)');
+      } else {
+        final success = await _addPackage(pkg);
+        if (success) {
+          addedPackages.add(pkg);
+          _logSuccess('  ✓ $pkg added');
+        } else {
+          _logError('  ✗ $pkg failed to add');
+        }
+      }
+    }
+  }
+
+  // ── Inject category comments into pubspec.yaml ─────────────────────
+  _logInfo('\nOrganizing pubspec.yaml with category comments...');
+  await _injectCategoryComments();
+
+  _logSuccess('\nSetup completed.');
+  _printSummary(
+    created: created,
+    skipped: skipped,
+    android: scaffoldAndroid,
+    ios: scaffoldIos,
+    addedPackages: addedPackages,
+    skippedPackages: skippedPackages,
+  );
 }
+
+// ── Package group definitions ──────────────────────────────────────────
+
+class _PackageGroup {
+  const _PackageGroup(this.comment, this.packages);
+  final String comment;
+  final List<String> packages;
+}
+
+const List<_PackageGroup> _packageGroups = [
+  _PackageGroup('#icon', ['hugeicons']),
+  _PackageGroup('#navigation', ['go_router', 'path_provider']),
+  _PackageGroup('#toast', ['cherry_toast', 'fluttertoast']),
+  _PackageGroup('#env', ['flutter_dotenv']),
+  _PackageGroup('#network', [
+    'dio',
+    'talker_dio_logger',
+    'retrofit',
+    'dio_cache_interceptor',
+    'synchronized',
+  ]),
+  _PackageGroup('#ui', ['flutter_screenutil']),
+  _PackageGroup('#app_config', [
+    'rename_app',
+    'change_app_package_name',
+    'flutter_launcher_icons',
+  ]),
+  _PackageGroup('#media', [
+    'cached_network_image',
+    'photo_view',
+    'image_picker',
+    'file_picker',
+    'carousel_slider',
+    'url_launcher',
+  ]),
+  _PackageGroup('#core', [
+    'dartz',
+    'flutter_bloc',
+    'equatable',
+    'get_it',
+  ]),
+];
+
+// ── Package helpers ────────────────────────────────────────────────────
+
+bool _packageExists(String pubspecContent, String packageName) {
+  // Match the package name as a dependency key in pubspec.yaml
+  final pattern = RegExp(
+    r'^\s+' + RegExp.escape(packageName) + r'\s*:',
+    multiLine: true,
+  );
+  return pattern.hasMatch(pubspecContent);
+}
+
+Future<bool> _addPackage(String packageName) async {
+  final result = await Process.run(
+    'flutter',
+    ['pub', 'add', packageName],
+    runInShell: true,
+  );
+  return result.exitCode == 0;
+}
+
+/// Injects category comments above each group's first package in pubspec.yaml.
+Future<void> _injectCategoryComments() async {
+  final file = File('pubspec.yaml');
+  final lines = file.readAsLinesSync();
+  final result = <String>[];
+
+  // Build a map: packageName -> comment (only first package in each group
+  // gets the comment, but we place the comment before ANY first occurrence
+  // of a package from that group).
+  final packageToGroup = <String, String>{};
+  for (final group in _packageGroups) {
+    for (final pkg in group.packages) {
+      packageToGroup[pkg] = group.comment;
+    }
+  }
+
+  final commentsInserted = <String>{};
+
+  for (final line in lines) {
+    // Check if this line is a dependency entry for one of our packages
+    final trimmed = line.trimLeft();
+    String? matchedPackage;
+    for (final pkg in packageToGroup.keys) {
+      if (trimmed.startsWith('$pkg:') || trimmed.startsWith('$pkg :')) {
+        matchedPackage = pkg;
+        break;
+      }
+    }
+
+    if (matchedPackage != null) {
+      final comment = packageToGroup[matchedPackage]!;
+      if (!commentsInserted.contains(comment)) {
+        // Check if the previous line already has this comment
+        final prevLine =
+            result.isNotEmpty ? result.last.trim() : '';
+        if (prevLine != comment) {
+          // Add blank line before comment for readability (unless previous
+          // line is already blank or is the "dependencies:" key)
+          if (result.isNotEmpty &&
+              result.last.trim().isNotEmpty &&
+              result.last.trim() != 'dependencies:') {
+            result.add('');
+          }
+          // Detect indentation from the dependency line
+          final indent =
+              line.substring(0, line.length - line.trimLeft().length);
+          result.add('$indent$comment');
+        }
+        commentsInserted.add(comment);
+      }
+    }
+
+    result.add(line);
+  }
+
+  await file.writeAsString('${result.join('\n')}\n');
+}
+
+// ── Directory / file helpers ───────────────────────────────────────────
 
 Future<void> _createDir(
   String path,
@@ -95,33 +253,59 @@ Future<void> _createFile(
   created.add(path);
 }
 
+// ── Summary ────────────────────────────────────────────────────────────
+
 void _printSummary({
   required List<String> created,
   required List<String> skipped,
   required bool android,
   required bool ios,
+  required List<String> addedPackages,
+  required List<String> skippedPackages,
 }) {
   stdout.writeln('');
   stdout.writeln('${_cyan}Summary${_reset}');
-  stdout.writeln('Target platforms: ${android ? 'Android ' : ''}${ios ? 'iOS' : ''}'.trim());
-  stdout.writeln('Created: ${created.length}');
+  stdout.writeln(
+    'Target platforms: ${android ? 'Android ' : ''}${ios ? 'iOS' : ''}'.trim(),
+  );
+  stdout.writeln('');
+
+  stdout.writeln('${_cyan}Directories & Files${_reset}');
+  stdout.writeln('  Created: ${created.length}');
   for (final item in created) {
-    stdout.writeln('  + $item');
+    stdout.writeln('    + $item');
   }
-  stdout.writeln('Skipped: ${skipped.length}');
+  stdout.writeln('  Skipped: ${skipped.length}');
   for (final item in skipped) {
-    stdout.writeln('  - $item');
+    stdout.writeln('    - $item');
+  }
+
+  stdout.writeln('');
+  stdout.writeln('${_cyan}Packages${_reset}');
+  stdout.writeln('  Added:   ${addedPackages.length}');
+  for (final item in addedPackages) {
+    stdout.writeln('    + $item');
+  }
+  stdout.writeln('  Skipped: ${skippedPackages.length}');
+  for (final item in skippedPackages) {
+    stdout.writeln('    - $item');
   }
 }
 
+// ── Logging ────────────────────────────────────────────────────────────
+
 void _logInfo(String message) => stdout.writeln('$_cyan$message$_reset');
 void _logSuccess(String message) => stdout.writeln('$_green$message$_reset');
+void _logSkip(String message) => stdout.writeln('$_yellow$message$_reset');
 void _logError(String message) => stderr.writeln('$_red$message$_reset');
 
 const String _reset = '\u001b[0m';
 const String _red = '\u001b[31m';
 const String _green = '\u001b[32m';
+const String _yellow = '\u001b[33m';
 const String _cyan = '\u001b[36m';
+
+// ── Templates ──────────────────────────────────────────────────────────
 
 const String _failureTemplate = '''
 class Failure {
